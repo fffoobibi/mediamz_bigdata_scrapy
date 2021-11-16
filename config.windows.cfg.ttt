@@ -1,0 +1,133 @@
+[crawl_settings]
+    #默认的爬虫模式:  _1.测试的爬虫模式, 0.未定义的爬虫模式 1.每天早8点抓取 2.每三天抓取 3.每7天抓取 4.每15日抓取 5.每30天抓取
+    crawl_mode=-1
+    #默认的爬虫进程数量
+    crawl_process_count=1
+    #默认的spider多开数量, ***推荐为1***
+    crawl_spider_count=1
+    # 默认的爬虫运行时间, 1d 2h 3m 40s 表示单次爬虫时间为1天2小时3分40秒; 0表示不限制爬虫时间
+    crawl_time=10d
+    # 默认爬取item的数量,超过10w条数据,爬虫停止;0表示不限制爬虫数量
+    crawl_item=0
+    # 爬虫持久化: true断点续爬虫, 增量式爬虫 false: 全新爬虫,非增量式爬虫
+    crawl_persist=true
+    # flush on start
+    crawl_flush=false
+    # 自动导入蜘蛛模块
+    # m, c, p, i, t, u , b参数
+    # m: 爬取模式; c: 爬虫多开数; p: 爬虫进程数; i: 最大爬取item数; t: 爬虫持续时间; u: 爬虫起始start_urls, 使用**拼接多个地址; b 设置lo
+    # , 表示一个单独的进程
+    # || 表示单个进程同时启用
+    # example
+    # youtube::m2::t120::p4::c2  表示启用4个youtube爬虫进程,爬虫模式为2,单次运行时间为120s,每个进程启动2个spider,总共为8个spider
+    # youtube::t1200::i100000 表示启动1个youtube爬虫进程，爬虫任务模式为1,多开数量为1个
+    # youtube::m2::c3||tiktok 表示启动一个爬虫进程, 启用3个youtube,3个tiktok蜘蛛,爬虫模式为2
+    # youtube::m1,tiktok::m2::c3 表示启动youtube模块，爬虫模式为1,spider数量为1；启动tiktok模块，爬虫模式为2，spider数量为3个
+    enable_spiders=tiktokchannel
+    # log level info, debug, warn
+    log_level=info
+    # log dir
+    log_dir = ./logs
+
+# d,v,e,c,h,i,v,g,s
+[chrome_settings]
+    # 运行模式
+    debug=false
+    # chrome版本
+    version=92.0.4515.43
+    # 启动路径
+    executable_path=C:\Users\admin\Desktop\newproject\chromedriver_95.4638.exe
+    # WebDriverWait超时时间
+    chrome_wait_time=5
+    # page_time超时时间
+    page_timeout=30
+    # 设置无头模式
+    headless=false
+    # 禁止图片加载
+    disable_image=false
+    # 禁止视频自动播放,该字段无效,使用移除video元素的方法达到屏蔽视频的效果
+    disable_video=false
+    # 禁u止gpu加速
+    disable_gpu=true
+    # 屏幕尺寸1936,1058
+    screen_size=1920,1080
+    # 浏览器用户目录数据
+    user_data_dir=./data/chrome_data
+    # 浏览器缓存目录
+    disk_cache_dir=./data/chrome_disk
+    # 1gb
+    disk_cache_size=1024000000
+
+
+
+[dynamic_settings]
+    # 浏览器重启
+    enable=false
+    # 浏览器使用时间: d, m, h, s
+    browser_time=5m
+    # 是否启用ip池
+    ipool_enable=true
+    # ip池,需重新定义
+    ipool_class=ProxyPool
+
+# vpn 重连设置
+[vpn_settings]
+    enable=false
+    name=vpn2
+    user=nxzg
+    passwd=nxzg
+
+[info_settings]
+    verbose=true
+    computer=centos7
+
+[mail_settings]
+# 是否启用邮件通知系统
+enable=false
+# 发件人
+user=2836204894@qq.com
+# 发件密码
+password=cmngsigjfmehdeci
+# email host
+host=smtp.qq.com
+# 接受列表,以,分隔接收地址
+sends=1564002691@qq.com
+# 通知频率,当爬虫运行每超过3小时则发送邮件通知;d, h, m, s, 0则不启用
+notice_frequency=2h
+
+[dbdefault]
+enable=true
+host=localhost
+user=root
+passwd=qwer123456
+port=3306
+db=spider_urls
+
+[redis]
+# scrapy_redis 参数设置
+# redis_url = redis://user:pass@hostname:6379
+host=localhost
+port=6379
+db=0
+
+[db1]
+user=root
+passwd=root
+host=127.0.0.1
+port=3306
+db=cl1
+
+[db2]
+user=root
+passwd=root
+host=127.0.0.1
+port=3306
+db=vueadmin
+
+[db3]
+user=root
+passwd=root
+host=127.0.0.1
+port=3306
+db=cl
+
