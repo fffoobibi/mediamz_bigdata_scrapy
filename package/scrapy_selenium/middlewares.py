@@ -34,17 +34,20 @@ _middle_ctx_stack = LocalStack()
 
 _Logger = logging.getLoggerClass()
 
+
 def _find_obj(name):
     top = _middle_ctx_stack.top
     if top is None:
         raise RuntimeError(_middle_ctx_err_msg)
     return getattr(top, name)
 
+
 spider: ChromeSpiderBase = LocalProxy(partial(_find_obj, 'spider'))
 request: BrowserRequest = LocalProxy(partial(_find_obj, 'request'))
 driver: SeleniumChrome = LocalProxy(partial(_find_obj, 'driver'))
 waiter: WebDriverWait = LocalProxy(partial(_find_obj, 'waiter'))
 middle: 'BrowserDownloadMiddle' = LocalProxy(partial(_find_obj, 'middle'))
+
 
 def make_response(url: str = None, body: str = None, req: 'Request' = None, status: int = None, encoding: str = None) -> HtmlResponse:
     u = request.url if url is None else url
@@ -54,10 +57,12 @@ def make_response(url: str = None, body: str = None, req: 'Request' = None, stat
     e = 'utf8' if encoding is None else encoding
     return HtmlResponse(url=u, body=b, request=r, status=s, encoding=e)
 
+
 def restart_browser(msg):
     middle.restart_browser(spider, msg, True)
     # if g.info_settings.get('verbose', False):
     #     print(f'[{spider.run_info} {time_now()}]: restart 触发器执行')
+
 
 def open_new_tag(msg):
     driver.execute_script('window.open("")')
@@ -66,10 +71,11 @@ def open_new_tag(msg):
     time.sleep(0.1)
     driver.switch_to.window(driver.window_handles[0])
 
+
 @trigger(frequencys=2,
-            calls=restart_browser,
-            events='restart',
-            raise_as=IgnoreRequest)
+         calls=restart_browser,
+         events='restart',
+         raise_as=IgnoreRequest)
 def middle_restart_get(self, url, time_out=5):
     try:
         self.set_page_load_timeout(time_out)
@@ -78,6 +84,7 @@ def middle_restart_get(self, url, time_out=5):
     except TimeoutException:
         self.execute_script('window.stop()')
         raise Trigger('restart', msg="页面超时, 重启浏览器")
+
 
 @trigger(1, calls=open_new_tag, events='newTag', raise_as=IgnoreRequest)
 def middle_tag_get(self, url, time_out=5):
@@ -89,8 +96,10 @@ def middle_tag_get(self, url, time_out=5):
         self.execute_script('window.stop()')
         raise Trigger('newTag', msg="页面超时, 新建标签")
 
+
 SeleniumChrome.middle_restart_get = middle_restart_get
 SeleniumChrome.middle_tag_get = middle_tag_get
+
 
 class BrowserDownloadMiddle:
 
@@ -129,7 +138,7 @@ class BrowserDownloadMiddle:
                 self.driver = None
                 self.waiter = None
         self._dont_open = v
-    
+
     def __init__(self) -> None:
         settings = deepcopy(g.chrome_settings)
         settings.pop('version', None)
@@ -157,12 +166,12 @@ class BrowserDownloadMiddle:
 
         # ip池
         self.ip_pool = IpPoolBase.getClass(
-            g.dynamic_settings.get('ipool_class', 'IpPoolBase'))(
-                self.browser_exist_time)
+            g.dynamic_settings.get('ipool_class', 'IpPoolBase'))()
 
     def _create_browser(self, use_ip=False, request_url=None):
         proxy_ip = self.ip_pool.random(request_url) if use_ip else None
-        self.driver = SeleniumChrome(proxy=proxy_ip, **self.browser_settings)
+        self.driver = SeleniumChrome(
+            proxy=proxy_ip, **self.browser_settings)
         self.waiter = self.driver.create_waiter(self.wait)
         self.driver.update_start_time()
 
@@ -207,6 +216,9 @@ class BrowserDownloadMiddle:
         下载中间件,处理request请求,使用selenium,返回None, response或者抛出ignoreRequest
         '''
         try:
+            if self.driver is None:
+                self._create_browser(use_ip=True, request_url=request.url)
+                
             _middle_ctx_stack.push(
                 Info(spider, request, self.driver, self.waiter, self))
 
@@ -221,11 +233,12 @@ class BrowserDownloadMiddle:
 
             return self._crawl_from_browser(request, spider)
 
-        except IgnoreRequest as e:
-            spider.logger.info(f'{spider.run_info}: ignore request {e}')
+        except IgnoreRequest:
+            spider.logger.info(
+                f'{spider.run_info}: ignore request', exc_info=True)
             raise
-        except Exception as e:
-            spider.logger.error(f'crawler error: {e}')
+        except:
+            spider.logger.error(f'crawler error', exc_info=True)
             raise IgnoreRequest
         finally:
             _middle_ctx_stack.pop()

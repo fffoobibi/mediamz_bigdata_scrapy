@@ -112,6 +112,9 @@ class SeleniumChrome(Chrome):
         )
 
         self.start_time = int(time.time())
+        if page_timeout is not None:
+            self.set_page_load_timeout(page_timeout)
+            self.set_script_timeout(page_timeout)
 
     @property
     def browser_time(self):

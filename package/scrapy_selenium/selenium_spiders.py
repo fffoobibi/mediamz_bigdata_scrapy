@@ -28,9 +28,9 @@ _dft_settings = {
     'DOWNLOADER_MIDDLEWARES': {
         'scrapy_selenium.middlewares.BrowserDownloadMiddle': 543  # 下载中间件
     },
-    # 'ITEM_PIPELINES': {
-    #     'scrapy_selenium.pipelines.SaveToSqlPipesline': 543  # 储存数据值mysql数据库
-    # },
+    'ITEM_PIPELINES': {
+        'scrapy_selenium.pipelines.SaveToSqlPipesline': 543  # 储存数据值mysql数据库
+    },
     'EXTENSIONS': {
         'scrapy_selenium.extensions.EMailExensions': 500  # 邮件通知
     },
@@ -60,7 +60,8 @@ class ChromeSpiderBase(object):
         settings = db_settings.copy()
         settings.pop('table', None)
         settings.pop('enable', None)
-        data_base = pymysql.connect(**settings)
+        port = int(settings.pop('port'))
+        data_base = pymysql.connect(**settings, port=port)
         db_name = str(data_base.db, encoding='utf8') if isinstance(
             data_base.db, bytes) else data_base.db
         self.dbs.setdefault(db_name, data_base)
@@ -267,45 +268,6 @@ class ChromeSpiderBase(object):
     # 阻塞指定的时间
     def sleep(self, time_out=0.5):
         time.sleep(time_out)
-
-    # # 字符串转换为数字类型
-    # def str2value(
-    #         self,
-    #         value_str: str,
-    #         *,
-    #         pattern: str = None,
-    #         strip: bool = True,
-    #         replace: Tuple[str, str] = None,  # (old, new)
-    #         dft=0  # 转换失败则返回默认值
-    # ) -> Union[int, float, None]:
-
-    #     if pattern:  # 正则处理
-    #         re_result = re.findall(pattern, value_str)
-    #         if re_result:
-    #             value_str = re_result[0]
-
-    #     value_str = str(value_str).strip() if strip else value_str  # 去除空白字符
-
-    #     value_str = value_str.replace(
-    #         *replace) if replace else value_str  # replace操作
-
-    #     idxOfYi = value_str.find("亿")
-
-    #     idxOfWan = value_str.find("万")
-
-    #     try:
-    #         if idxOfYi != -1 and idxOfWan != -1:
-    #             return int(
-    #                 float(value_str[:idxOfYi]) * 1e8 +
-    #                 float(value_str[idxOfYi + 1:idxOfWan]) * 1e4)
-    #         elif idxOfYi != -1 and idxOfWan == -1:
-    #             return int(float(value_str[:idxOfYi]) * 1e8)
-    #         elif idxOfYi == -1 and idxOfWan != -1:
-    #             return int(float(value_str[idxOfYi + 1:idxOfWan]) * 1e4)
-    #         elif idxOfYi == -1 and idxOfWan == -1:
-    #             return float(value_str)
-    #     except:
-    #         return dft
 
 
 class ChromeSpider(ChromeSpiderBase, scrapy.Spider, metaclass=SpiderRef):

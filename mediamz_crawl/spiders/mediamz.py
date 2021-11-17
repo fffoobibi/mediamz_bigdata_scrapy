@@ -55,19 +55,19 @@ class MediamzSpider(ChromeSpider):
 
     def create_cursors(self) -> List[Tuple[Cursor, SaveToSqlPipesline]]:
         cursors = []
-        name = 'db_mediamz'
+        name = g.db_mediamz.get('db')
         try:
-            settings = g.dbs[name]
+            settings = g.db_mediamz
             self.create_db(settings)
         except:
-            self.log(f'---connect db fail---',
-                        level=logging.ERROR, exc_info=True)
+            self.log(f'--- connect db fail ---',
+                     level=logging.ERROR, exc_info=True)
         try:
             cursor = self.get_cursor(settings['db'])
         except:
             cursor = None
-            self.log(f'---get cursor fail---',
-                        level=logging.ERROR, exc_info=True)
+            self.log(f'--- get cursor fail ---',
+                     level=logging.ERROR, exc_info=True)
         if cursor is not None:
             cursors.append((cursor, pipe_lines.__getattr__(name)))
         return cursors
@@ -111,9 +111,11 @@ class MediamzSpider(ChromeSpider):
 
     def start_requests(self):
         cursors = self.create_cursors()
-        datas = [self.request_from_cursor(cursor, db) for cursor, db in cursors]
-        if datas:
-            yield from zip_longest(*datas)
+        datas = [self.request_from_cursor(cursor, db)
+                 for cursor, db in cursors]
+        
+        for tr in zip_longest(*datas):
+            yield from tr
 
     def parse_detail(seflf, resp): ...
 
@@ -126,4 +128,3 @@ class MediamzSpider(ChromeSpider):
     def parse_log(self, response): ...
 
     def parse_partner(self, response): ...
-

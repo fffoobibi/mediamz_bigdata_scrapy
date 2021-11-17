@@ -148,6 +148,7 @@ class SaveToSqlPipesline(object):
             if logger is not None:
                 defer.addErrback(
                     lambda err: logger.error('update error %s' % err, exc_info=True))
+                # defer.addCallback(lambda tb: logger.info('update success') )
 
     def insert(self, table: str, item: dict = None, logger: Optional[Logger] = None, ignore: bool = True, **fields):
         """
@@ -155,9 +156,7 @@ class SaveToSqlPipesline(object):
         """
         def _adb_insert(cursor, sql, value):
             cursor.execute(sql, value)
-
         if self.db_pool:
-
             if item is not None:
                 item.pop('_table_', None)
                 item.pop('_save_', None)

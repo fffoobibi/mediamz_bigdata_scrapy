@@ -50,7 +50,7 @@ class Env(dict):
                 copyed = deepcopy(v)
             else:
                 copyed = v
-            self._dl_caches_[k] = deepcopy(v)
+            self._dl_caches_[k] = copyed
             return copyed
         return cache
 
@@ -58,7 +58,7 @@ class Env(dict):
         register_key = key.replace('-', '_')
         super().__setitem__(register_key, value)
 
-    def flush(self):
+    def reset(self):
         self._dl_caches_.clear()
 
     def propertys(self) -> list:

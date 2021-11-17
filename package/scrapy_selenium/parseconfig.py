@@ -13,16 +13,22 @@ from .defaults import (main_script, dft_cfg, vpn_script, DEFAULT_CHROME_SETTINGS
                        DEFAULT_DYNAMIC_SETTINGS, DEFAULT_INFO_SETTINGS, DEFAULT_MAIL_SETTINGS,
                        DEFAULT_MYSQL_SETTINGS, DEFAULT_REDIS_SETTINGS, DEFAULT_VPN_SETTINGS)
 
+def _err_none(func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except:
+        return 
+
 def _set_dft_config(k, parser):
     try:
         return dict(parser.items(k))
     except:
-        if k == 'dbdefault':
+        if k == 'dbdefault' or k == 'mysql_settings':
             return DEFAULT_MYSQL_SETTINGS
         elif k == 'redis':
             return DEFAULT_REDIS_SETTINGS
         elif k == 'chrome_settings':
-            return DEFAULT_CHROME_SETTINGS 
+            return DEFAULT_CHROME_SETTINGS
         elif k == 'crawl_settings':
             return DEFAULT_CRAWL_SETTINGS
         elif k == 'mail_settings':
@@ -36,6 +42,7 @@ def _set_dft_config(k, parser):
         else:
             raise
 
+
 def _create_g(cfg_path="./config.cfg"):
     parser = configparser.ConfigParser()
     parser.read(cfg_path, encoding='utf8')
@@ -43,7 +50,7 @@ def _create_g(cfg_path="./config.cfg"):
     # 解析default db 配置
     key = 'dbdefault'
     mysql_settings = _set_dft_config(key, parser)
-    mysql_settings['port'] = parser.getint(key, 'port')
+    mysql_settings['port'] = int(mysql_settings['port'])
     env.register(key, mysql_settings)
 
     # 解析redis 配置
@@ -53,27 +60,50 @@ def _create_g(cfg_path="./config.cfg"):
     redis_settings['db'] = parser.getint(key, 'db')
     env.register(key, redis_settings)
 
-    # 解析chorme 相关配置
+    # 全局chorme 相关配置
     key = 'chrome_settings'
+    df = DEFAULT_CHROME_SETTINGS
     chrome_settings = {}
-    chrome_settings['chrome_wait_time'] = parser.getint(
-        key, 'chrome_wait_time')
-    chrome_settings['page_timeout'] = parser.getint(key, 'page_timeout')
-    chrome_settings['headless'] = parser.getboolean(key, 'headless')
-    chrome_settings['disable_image'] = parser.getboolean(key, 'disable_image')
-    chrome_settings['disable_gpu'] = parser.getboolean(key, 'disable_gpu')
-    chrome_settings['screen_size'] = parser.get(key, 'screen_size')
-    chrome_settings['debug'] = parser.getboolean(key, 'debug')
-    chrome_settings['version'] = parser.get(key, 'version')
-    chrome_settings['executable_path'] = abspath(
-        parser.get(key, 'executable_path'))
-    chrome_settings['user_data_dir'] = abspath(
-        parser.get(key, 'user_data_dir'))
-    chrome_settings['disk_cache_dir'] = abspath(
-        parser.get(key, 'disk_cache_dir'))
-    chrome_settings['disk_cache_size'] = abspath(
-        parser.get(key, 'disk_cache_size'))
+    chrome_settings['chrome_wait_time'] = _err_none(parser.getint, key, 'chrome_wait_time') or df['chrome_wait_time'] # parser.getint(key, 'chrome_wait_time')
+    chrome_settings['page_timeout'] = _err_none(parser.getint, key, 'page_timeout') or df['page_timeout'] #parser.getint(key, 'page_timeout')
+    chrome_settings['headless'] = _err_none(parser.getboolean, key, 'headless') or df['headless']  #parser.getboolean(key, 'headless')
+    chrome_settings['disable_image'] = _err_none(parser.getboolean, key, 'disable_image') or df['disable_image'] #parser.getboolean(key, 'disable_image')
+    chrome_settings['disable_gpu'] = _err_none(parser.getboolean, key, 'disable_gpu') or df['disable_gpu'] #parser.getboolean(key, 'disable_gpu')
+    chrome_settings['screen_size'] = _err_none(parser.get, key, 'screen_size') or df['screen_size'] #parser.get(key, 'screen_size')
+    chrome_settings['debug'] = _err_none(parser.getboolean, key, 'debug') or df['debug'] #parser.getboolean(key, 'debug')
+    chrome_settings['version'] = _err_none(parser.get, key, 'version') or df['version'] #parser.get(key, 'version')
+    f = _err_none(parser.get, key, 'executable_path') or df['executable_path']
+    if f == 'none' or f is None:
+        chrome_settings['executable_path'] = None
+    else:
+        chrome_settings['executable_path'] = abspath(f) #abspath(parser.get(key, 'executable_path'))
+
+    f = _err_none(parser.get, 'user_data_dir') or df['user_data_dir']
+    if f == 'none' or f is None:
+        chrome_settings['user_data_dir'] = None
+    else:
+        chrome_settings['user_data_dir'] = abspath(f) #abspath(parser.get(key, 'user_data_dir'))
+    f = _err_none(parser.get, key, 'disk_cache_dir') or df['disk_cache_dir']
+
+    if f == 'none' or f is None:
+        chrome_settings['disk_cache_dir'] = None
+    else:
+        chrome_settings['disk_cache_dir'] = abspath(f) #abspath(parser.get(key, 'disk_cache_dir'))
+
+    f = _err_none(parser.get, key, 'disk_cache_size') or df['disk_cache_size']
+
+    if f == 'none' or f is None:
+        chrome_settings['disk_cache_size'] = None
+    else:
+        chrome_settings['disk_cache_size'] = abspath(f) #abspath(parser.get(key, 'disk_cache_size'))
     env.register(key, chrome_settings)
+
+    # 为每个爬虫配置chrome
+    other_keys = parser.keys()
+    for k in other_keys:
+        if (k.startswith('chrome_settings::')):
+            v = dict(parser.items(k))
+            env.register(k, v)
 
     # 解析爬虫 相关配置
     key = 'crawl_settings'
@@ -130,10 +160,6 @@ def _create_g(cfg_path="./config.cfg"):
                         ss = urls.split('**')
                         for url in ss:
                             start_urls.append(url.strip())
-                # elif arg.startswith('b'):
-                #     browser_settings = arg.strip('b')
-                #     # d,v,e,c,h,i,v,g,s
-                #     bss = re.findall(r'(d|v|e|c|h|i|g|s)\s*?(true|false|\d+\,\d+|\d+)', browser_settings)
                 else:
                     crawl_file = arg
             cmds = [
@@ -216,12 +242,14 @@ def _create_g(cfg_path="./config.cfg"):
             collect[k] = v
     env.register('dbs', collect)
 
+    # other settings
     other_keys = parser.keys()
-    not_contains = 'redis chrome_settings mail_settings crawl_settings info_settings dynamic_settings vpn_settings'.split(' ')
+    not_contains = 'redis chrome_settings mail_settings crawl_settings info_settings dynamic_settings vpn_settings'.split(
+        ' ')
     for k in other_keys:
-        if (k not in not_contains) and (not k.startswith('db')):
+        if (k not in not_contains) and (not k.startswith('chrome_settings')):
             v = dict(parser.items(k))
-            env.register(k) = v
+            env.register(k, v)
 
     env.has_init = True
 

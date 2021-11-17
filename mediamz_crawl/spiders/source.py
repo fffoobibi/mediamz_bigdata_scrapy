@@ -7,9 +7,9 @@ from typing import List, Iterator, Tuple
 from pymysql.cursors import Cursor
 
 from scrapy_selenium.pipelines import SaveToSqlPipesline
-from scrapy_selenium import (g, pipe_lines, BrowserRequest, ChromeSpider)
+from scrapy_selenium import g, pipe_lines, BrowserRequest, ChromeSpider
 
-from mediamz_crawl.spiders import Crawl, should_crawl, Tbl, UrlType
+from mediamz_crawl.spiders import Crawl, Tbl, UrlType
 from mediamz_crawl.spiders.ins_account import get_ins_other_account
 
 
@@ -37,25 +37,25 @@ class SourceSpider(ChromeSpider):
 
     def create_cursors(self) -> List[Tuple[Cursor, SaveToSqlPipesline]]:
         cursors = []
-        name = 'db_source'
+        name = g.db_source.get('db')
         try:
-            settings = g.dbs[name]
+            settings = g.db_source
             self.create_db(settings)
         except:
             self.log(f'---connect db fail---',
-                        level=logging.ERROR, exc_info=True)
+                     level=logging.ERROR, exc_info=True)
         try:
             cursor = self.get_cursor(settings['db'])
         except:
             cursor = None
             self.log(f'---get cursor fail---',
-                        level=logging.ERROR, exc_info=True)
+                     level=logging.ERROR, exc_info=True)
         if cursor is not None:
             cursors.append((cursor, pipe_lines.__getattr__(name)))
         return cursors
 
     def request_from_cursor(self, cursor: Cursor, db: SaveToSqlPipesline) -> Iterator[BrowserRequest]:
-        detail = self.get_table(cursor, Tbl.tbl_promoter_task_accept_detail)
+        detail = self.get_table(cursor, Tbl.tbl_marketing_analysisn)
         for d in detail:
             if d is not None:
                 url_type = self.url_type(d['channel_url'])
@@ -63,14 +63,16 @@ class SourceSpider(ChromeSpider):
                     kw = {'account': get_ins_other_account()}
                 else:
                     kw = {}
-                yield BrowserRequest(d['channel_url'], self.parse_detail,
-                                     cont_flag=partial(SourceCrawl.crawl_promoter_detail, url_type, d, db, **kw), dont_filter=True)
+                if url_type != UrlType.unknow:
+                    yield BrowserRequest(d['channel_url'], self.parse_detail,
+                                        cont_flag=partial(SourceCrawl.crawl_analysisn, url_type, d, db, **kw), dont_filter=True)
 
     def start_requests(self):
         cursors = self.create_cursors()
-        datas = [self.request_from_cursor(cursor, db) for cursor, db in cursors]
-        if datas:
-            yield from zip_longest(*datas)
+        datas = [self.request_from_cursor(cursor, db)
+                 for cursor, db in cursors]
+        for tr in zip_longest(*datas):
+            yield from tr
 
     def parse_detail(seflf, resp):
         ...

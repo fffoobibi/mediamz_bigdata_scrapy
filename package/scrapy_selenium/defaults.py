@@ -150,16 +150,16 @@ DEFAULT_INFO_SETTINGS = {'verbose': True, 'computer': platform}
 DEFAULT_CHROME_SETTINGS = {
     'debug': False, # 运行模式
     'version': 'unknown', # chrome版本
-    'executable_path': './chromedriver', # 启动路径
-    'chrome_wait_time': 5, # WebDriverWait超时时间
-    'page_timeout': 5, # 页面超时 
-    'headless': False, # 设置无头模式
-    'disable_image': False, # 禁止图片加载
+    'executable_path': None, # 启动路径
+    'chrome_wait_time': 10, # WebDriverWait超时时间
+    'page_timeout': 10, # 页面超时 
+    'headless': True, # 设置无头模式
+    'disable_image': True, # 禁止图片加载
     'disable_gpu': True, # 禁u止gpu加速
     'screen_size': '1936,1058', # 屏幕尺寸
-    'user_data_dir': './data/chrome_data', # 浏览器用户目录数据
-    'disk_cache_dir': './data/chrome_disk', # 浏览器缓存目录
-    'disk_cache_size': 1024000000 # 1gb
+    'user_data_dir': None, # 浏览器用户目录数据
+    'disk_cache_dir': None, # 浏览器缓存目录
+    'disk_cache_size': None # 1gb 1024000000
 }
 
 DEFAULT_MAIL_SETTINGS = {
@@ -182,7 +182,7 @@ DEFAULT_MYSQL_SETTINGS = {
     'enable': False,
     'host': 'localhost',
     'user': 'root',
-    'passwd': 'qwer123456',
+    'passwd': 'root',
     'port': 3306,
     'db': 'spider_urls',
     'table': 'tbl_marketing_analysisn'
